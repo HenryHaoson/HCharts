@@ -7,8 +7,12 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -19,6 +23,7 @@ import java.util.ArrayList;
 
 import cn.henry.zhuhao.animatordemo.entity.PieData;
 import cn.henry.zhuhao.animatordemo.utils.ColorUtils;
+import cn.henry.zhuhao.animatordemo.utils.GeomTool;
 
 /**
  * Created by HenryZhuhao on 2017/6/1.
@@ -102,6 +107,7 @@ public class PieView extends View {
             PieData pie = mData.get(i);
             mPaint.setColor(pie.getColor());
             canvas.drawArc(rectBig, mData.get(i).getStartangle(), angles[i], true, mPaint);
+            drawText(canvas, i);
         }
         mPaint.setColor(Color.WHITE);
         canvas.drawOval(rectSmall, mPaint);
@@ -117,7 +123,7 @@ public class PieView extends View {
     /**
      * 设置起始角度
      *
-     * @param mStartAngle
+     * @param mStartAngle 用户传入
      */
     public void setStartAngle(int mStartAngle) {
         this.mStartAngle = mStartAngle;
@@ -127,7 +133,7 @@ public class PieView extends View {
     /**
      * 设置数据
      *
-     * @param mData
+     * @param mData 用户初始化数据
      */
     public void setData(ArrayList<PieData> mData) {
         this.mData = mData;
@@ -138,7 +144,7 @@ public class PieView extends View {
     /**
      * 初始化数据
      *
-     * @param mData
+     * @param mData 用户初始化数据
      */
     private void initData(ArrayList<PieData> mData) {
         if (null == mData || mData.size() == 0)   // 数据有问题 直接返回
@@ -213,7 +219,7 @@ public class PieView extends View {
     /**
      * 初始化region区域
      *
-     * @param position
+     * @param position posotion
      */
     public void initRegion(int position) {
         paths[position] = new Path();
@@ -234,8 +240,8 @@ public class PieView extends View {
     /**
      * 获取点击位置
      *
-     * @param x
-     * @param y
+     * @param x x坐标
+     * @param y y坐标
      * @return posotion
      */
     public int getTouchedPath(int x, int y) {
@@ -283,14 +289,38 @@ public class PieView extends View {
         return true;
     }
 
-    private void drawText(Canvas canvas,int position){
-        mPaint.setTextAlign(Paint.Align.CENTER);
-//        canvas.drawText(mData.get(position).getName(),);
+    private void drawText(Canvas canvas, int position) {
+        PieData pie = mData.get(position);
+        float value=pie.getPercentage();
+        TextPaint textPaint = new TextPaint();
+        //不换行
+//        mPaint.setTextAlign(Paint.Align.CENTER);
+//        mPaint.setTextSize(40);
+//        mPaint.setColor(Color.BLACK);
+//        canvas.drawText(pie.getName()+(pie.getPercentage()*100)+"%",getCenter(pie.getStartangle(),pie.getAngle(),nr,r).x,
+//        getCenter(pie.getStartangle(),pie.getAngle(),nr,r).y,mPaint);
+        textPaint.setTextAlign(Paint.Align.LEFT);
+        textPaint.setColor(Color.parseColor("#000000"));
+        textPaint.setTextSize(40.0F);
+        textPaint.setAntiAlias(true);
+        StaticLayout layout = new StaticLayout(((float)(Math.round(value*1000))/1000* 100) + "%\r\n" + pie.getName(),
+                textPaint, 1000, Layout.Alignment.ALIGN_CENTER, 1.0F, 0.0F, true);
+        canvas.save();
+        canvas.translate(-mWidth / 2,0);
+        canvas.translate(getCenter(pie.getStartangle(), pie.getAngle(), nr, r).x,
+                getCenter(pie.getStartangle(), pie.getAngle(), nr, r).y);
+        layout.draw(canvas);
+        canvas.restore();
+
     }
 
-//    private Point getCenter(float startAngle,float sweepAngle,float nr,float r){
-//        Point centerPoint=new Point();
-//    }
+    private Point getCenter(float startAngle, float sweepAngle, float nr, float r) {
+        Point centerPoint = new Point();
+        float centerr = (nr + r) / 2;
+        float angle = startAngle + sweepAngle / 2;
+        GeomTool.calcCirclePoint((int) angle, centerr, 0, 0, centerPoint);
+        return centerPoint;
+    }
 
     private void onClickAnimator(Canvas canvas, int position) {
         mPaint.setColor(ColorUtils.getColorWithAlpha(mData.get(position).getColor(), 0.5f));
