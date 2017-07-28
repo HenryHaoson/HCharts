@@ -14,16 +14,19 @@ public class PieData {
 
     // 非用户关心数据
     private int color = 0;      // 颜色
+
+    private float startangle = 0;
     private float angle = 0;    // 角度
 
     public PieData(@NonNull String name, @NonNull float value) {
         this.name = name;
         this.value = value;
     }
-    public PieData(@NonNull String name,@NonNull float value,@NonNull int color){
-        this.name=name;
-        this.value=value;
-        this.color=color;
+
+    public PieData(@NonNull String name, @NonNull float value, @NonNull int color) {
+        this.name = name;
+        this.value = value;
+        this.color = color;
     }
 
     public String getName() {
@@ -64,5 +67,13 @@ public class PieData {
 
     public void setAngle(float angle) {
         this.angle = angle;
+    }
+
+    public float getStartangle() {
+        return startangle;
+    }
+
+    public void setStartangle(float startangle) {
+        this.startangle = startangle;
     }
 }

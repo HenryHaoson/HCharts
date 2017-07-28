@@ -4,17 +4,21 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
-import android.os.Build;
+import android.graphics.Region;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
 
 import cn.henry.zhuhao.animatordemo.entity.PieData;
+import cn.henry.zhuhao.animatordemo.utils.ColorUtils;
 
 /**
  * Created by HenryZhuhao on 2017/6/1.
@@ -33,26 +37,57 @@ public class PieView extends View {
     // 画笔
     private Paint mPaint = new Paint();
 
+    private int currentFlag = -2;
 
     //动画支持数据。
-    public float[] angles;
-    public float[] angles1;
+    private float[] angles;//实时数据
+    private float[] angles1;//静态数据
+
+    //region
+    private Region globalRegion;
+
+    private Region[] regions;
+    private Path[] paths;
+    //Pie图的半径
+    private float r;
+    //pie图内圆半径
+    private float nr;
+    //pie点击半径
+    private float cr;
+
+    //pie图外切圆
+    private RectF rectBig;
+    //pie内部圆
+    private RectF rectSmall;
+    private PieListener mListener;
+    //pie点击圆
+    private RectF rectClick;
+
+    private Matrix mMapMatrix;
+
 
     public PieView(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public PieView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);
+        mMapMatrix = new Matrix();
+
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        mMapMatrix.reset();
         mWidth = w;
         mHeight = h;
+        initCommons();
+        for (int i = 0; i < mData.size(); i++) {
+            initRegion(i);
+        }
     }
 
     @Override
@@ -61,44 +96,57 @@ public class PieView extends View {
         if (null == mData) {
             return;
         }
-        float currentStartAngle = mStartAngle;                    // 当前起始角度
         canvas.translate(mWidth / 2, mHeight / 2);
-        float r = (float) (Math.min(mWidth, mHeight) / 2 * 0.8);
-        RectF rect = new RectF(-r, -r, r, r);                     // 饼状图绘制区域
-
+        canvas.getMatrix().invert(mMapMatrix);
         for (int i = 0; i < mData.size(); i++) {
             PieData pie = mData.get(i);
             mPaint.setColor(pie.getColor());
-            canvas.drawArc(rect, currentStartAngle,angles[i], true, mPaint);
-            currentStartAngle += pie.getAngle();
+            canvas.drawArc(rectBig, mData.get(i).getStartangle(), angles[i], true, mPaint);
         }
         mPaint.setColor(Color.WHITE);
-        float rn=r*2/7;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            canvas.drawOval(-rn,-rn,rn,rn,mPaint);
+        canvas.drawOval(rectSmall, mPaint);
+        if (currentFlag == -2) {
+
+        } else {
+            onClickAnimator(canvas, currentFlag);
         }
+
 
     }
 
-    // 设置起始角度
+    /**
+     * 设置起始角度
+     *
+     * @param mStartAngle
+     */
     public void setStartAngle(int mStartAngle) {
         this.mStartAngle = mStartAngle;
         invalidate();   // 刷新
     }
 
-    // 设置数据
+    /**
+     * 设置数据
+     *
+     * @param mData
+     */
     public void setData(ArrayList<PieData> mData) {
         this.mData = mData;
         initData(mData);
         invalidate();   // 刷新
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     *
+     * @param mData
+     */
     private void initData(ArrayList<PieData> mData) {
         if (null == mData || mData.size() == 0)   // 数据有问题 直接返回
             return;
         angles = new float[mData.size()];
         angles1 = new float[mData.size()];
+        regions = new Region[mData.size()];
+        paths = new Path[mData.size()];
         float sumValue = 0;
         for (int i = 0; i < mData.size(); i++) {
 
@@ -106,12 +154,13 @@ public class PieView extends View {
 
 
             sumValue += pie.getValue();       //计算数值和
-
-            int j = i % mColors.length;       //设置颜色
-            pie.setColor(mColors[j]);
+            if (pie.getColor() == 0) {
+                int j = i % mColors.length;       //设置颜色
+                pie.setColor(mColors[j]);
+            }
         }
 
-        float sumAngle = 0;
+        float currentAngle = mStartAngle;
         for (int i = 0; i < mData.size(); i++) {
             PieData pie = mData.get(i);
 
@@ -119,32 +168,150 @@ public class PieView extends View {
             float angle = percentage * 360;                 // 对应的角度
             pie.setPercentage(percentage);                  // 记录百分比
             pie.setAngle(angle);                            // 记录角度大小
-            angles1[i] = pie.getAngle();     //获取角度
-
-            sumAngle += angle;
-
-            Log.i("angle", "" + pie.getAngle());
+            pie.setStartangle(currentAngle);
+            angles1[i] = pie.getAngle();//获取角度
+            currentAngle += angle;
+            Log.e("pieview", mData.get(i).getStartangle() + "start");
         }
     }
 
-
+    /**
+     * 设置动画
+     */
     public void startAnimator() {
         for (int i = 0; i < mData.size(); i++) {
-            ValueAnimator valueAnimatorA = ValueAnimator.ofFloat(0f,angles1[i]);
+            ValueAnimator valueAnimatorA = ValueAnimator.ofFloat(0f, angles1[i]);
             valueAnimatorA.setInterpolator(new LinearInterpolator());
             valueAnimatorA.setDuration(1000);
             final int finalI = i;
             valueAnimatorA.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
-                    angles[finalI]= (float) animation.getAnimatedValue();
-                    Log.e("tag",angles[finalI]+"");
+                    angles[finalI] = (float) animation.getAnimatedValue();
+                    Log.e("tag", angles[finalI] + "");
                     invalidate();
                 }
             });
-           valueAnimatorA.start();
+
+            valueAnimatorA.start();
         }
     }
 
+    /**
+     * 设置常量
+     */
+    private void initCommons() {
+        r = (float) (Math.min(mWidth, mHeight) / 2 * 0.8);
+        nr = r * 3 / 8;
+        cr = 9 * r / 8;
+        rectBig = new RectF(-r, -r, r, r);
+        rectSmall = new RectF(-nr, -nr, nr, nr);
+        rectClick = new RectF(-cr, -cr, cr, cr);
+        globalRegion = new Region(-mWidth, -mHeight, mWidth, mHeight);
+    }
+
+    /**
+     * 初始化region区域
+     *
+     * @param position
+     */
+    public void initRegion(int position) {
+        paths[position] = new Path();
+        regions[position] = new Region();
+        PieData pie = mData.get(position);
+        mPaint.setColor(pie.getColor());
+        paths[position].addArc(rectBig, mData.get(position).getStartangle(), mData.get(position).getAngle());
+        if (position < mData.size() - 1) {
+            paths[position].arcTo(rectSmall, mData.get(position + 1).getStartangle(), -angles1[position]);
+        } else {
+            paths[position].arcTo(rectSmall, mData.get(0).getStartangle(), -angles1[position]);
+        }
+        paths[position].close();
+        regions[position].setPath(paths[position], globalRegion);
+    }
+
+
+    /**
+     * 获取点击位置
+     *
+     * @param x
+     * @param y
+     * @return posotion
+     */
+    public int getTouchedPath(int x, int y) {
+        for (int i = 0; i < regions.length; i++) {
+            if (regions[i].contains(x, y)) {
+                currentFlag = i;
+                return i;
+            }
+        }
+        currentFlag = -2;
+        return -1;
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float[] pts = new float[2];
+//        pts[0] = event.getRawX();
+//        pts[1] = event.getRawY();
+        pts[0] = event.getX();
+        pts[1] = event.getY();
+        mMapMatrix.mapPoints(pts);
+
+
+        int x = (int) pts[0];
+        int y = (int) pts[1];
+        Log.e("pieview", "onTouch x:" + x + "y:" + y);
+
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                int position = getTouchedPath(x, y);
+                mListener.onPieClicked(position);
+                // Toast.makeText(getContext(), position + "pieClicked", Toast.LENGTH_SHORT).show();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                break;
+            case MotionEvent.ACTION_UP:
+
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                break;
+        }
+
+        invalidate();
+        return true;
+    }
+
+    private void drawText(Canvas canvas,int position){
+        mPaint.setTextAlign(Paint.Align.CENTER);
+//        canvas.drawText(mData.get(position).getName(),);
+    }
+
+//    private Point getCenter(float startAngle,float sweepAngle,float nr,float r){
+//        Point centerPoint=new Point();
+//    }
+
+    private void onClickAnimator(Canvas canvas, int position) {
+        mPaint.setColor(ColorUtils.getColorWithAlpha(mData.get(position).getColor(), 0.5f));
+        Path clickPath = new Path();
+        clickPath.addArc(rectClick, mData.get(position).getStartangle(), mData.get(position).getAngle());
+        if (position < mData.size() - 1) {
+            clickPath.arcTo(rectBig, mData.get(position + 1).getStartangle(), -angles1[position]);
+        } else {
+            clickPath.arcTo(rectBig, mData.get(0).getStartangle(), -angles1[position]);
+        }
+        canvas.drawPath(clickPath, mPaint);
+
+    }
+
+    public void setListener(PieListener listener) {
+        mListener = listener;
+    }
+
+
+    public interface PieListener {
+        void onPieClicked(int position);
+    }
 
 }
