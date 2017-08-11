@@ -6,7 +6,10 @@ import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PathEffect;
+import android.graphics.RectF;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 
 /**
  * Created by HenryZhuhao on 2017/6/11.
+ * 进度:画笔设置
  */
 
 public class SimpleBarView extends View {
@@ -37,13 +41,20 @@ public class SimpleBarView extends View {
     // 宽高
     private int mWidth, mHeight;
     //text画笔
-    private Paint textPaint;
+    private TextPaint textPaint;
 
     //rect画笔
     private Paint rectPaint;
 
     //line画笔
     private Paint linePaint;
+
+    //valueLine的Path；
+    private Path[] valueLinePaths;
+
+    //bars的rects
+    private RectF[] barsRects;
+
 
     //value-->height转换比例，使用的时候是height=value*scale;
     private float scale;
@@ -98,9 +109,8 @@ public class SimpleBarView extends View {
     }
 
 
-    public void setData(ArrayList<BarData> list, int totalHeight) {
+    public void setData(ArrayList<BarData> list) {
         mData = list;
-        this.totalHeight = totalHeight;
         initData(mData);
         invalidate();
     }
@@ -111,26 +121,30 @@ public class SimpleBarView extends View {
         }
         length = new float[mData.size()];
         length1 = new float[mData.size()];
+        valueLinePaths = new Path[mData.size()];
+        barsRects = new RectF[mData.size()];
         for (int i = 0; i < mData.size(); i++) {
             BarData bar = mData.get(i);
             int j = i % mColors.length;
             bar.setColor(mColors[j]);
-
         }
     }
 
-    private void initPaint(){
-        textPaint.setColor(Color.BLACK);       //设置画笔颜色
-        PathEffect effects = new DashPathEffect(new float[]{},1);
-        textPaint.setPathEffect(effects);
+    private void initPaint() {
+        textPaint = new TextPaint();
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextAlign(Paint.Align.LEFT);
+
+        linePaint=new Paint();
+        PathEffect effects = new DashPathEffect(new float[]{}, 1);
+        linePaint.setPathEffect(effects);
+
+        rectPaint=new Paint();
+        rectPaint.setStyle(Paint.Style.FILL);
+
+
     }
 
-
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -171,19 +185,41 @@ public class SimpleBarView extends View {
     }
 
     public void drawValueLines(Canvas canvas) {
+        for (int i = 0; i < valueLineCount; i++) {
+            Path path = valueLinePaths[i];
+            path.moveTo(barWidth, -intervalValueHeight * (i + 1));
+            path.lineTo(mWidth, -intervalValueHeight * (i + 1));
+            canvas.drawPath(path, textPaint);
+        }
 
     }
 
     public void drawNames(Canvas canvas) {
-
+        for (int i = 0; i < mData.size(); i++) {
+            canvas.drawText(mData.get(i).getName(), barWidth, 0, textPaint);
+        }
     }
 
     public void drawValues(Canvas canvas) {
-
+        for (int i = 0; i < mData.size(); i++) {
+            if (i == 0) {
+                canvas.drawText(0+"",0,0,textPaint);
+            }else {
+                canvas.drawText((totalValue/3*i)+"",0,-intervalValueHeight*i,textPaint);
+            }
+        }
     }
 
     public void drawBars(Canvas canvas) {
+        for (int i = 0; i <mData.size() ; i++) {
+            RectF rect=barsRects[i];
+            rect.left=barWidth+i*(barWidth+intervalValueHeight);
+            rect.right=rect.left+barWidth;
+            rect.top=-mData.get(i).getViewHeight();
+            rect.top=-mWidth/10;
 
+            canvas.drawRect(rect,rectPaint);
+        }
     }
 
     /**
@@ -210,5 +246,34 @@ public class SimpleBarView extends View {
 
     public void startAnimator() {
 
+    }
+
+
+    //*************
+    public static Builder build(SimpleBarView view) {
+        return new Builder(view);
+    }
+
+
+    public static class Builder {
+        private SimpleBarView mView;
+
+        private Builder(SimpleBarView view) {
+            this.mView = view;
+        }
+
+        public Builder setTotalValue(float value) {
+            mView.setTotalValue(value);
+            return this;
+        }
+
+        public Builder setData(ArrayList<BarData> list) {
+            mView.setData(list);
+            return this;
+        }
+
+        public void start() {
+            mView.startAnimator();
+        }
     }
 }
