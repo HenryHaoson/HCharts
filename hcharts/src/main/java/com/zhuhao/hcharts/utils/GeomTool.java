@@ -1,4 +1,4 @@
-package cn.henry.zhuhao.animatordemo.utils;
+package com.zhuhao.hcharts.utils;
 
 import android.graphics.Point;
 import android.graphics.RectF;

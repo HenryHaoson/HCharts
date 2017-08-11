@@ -1,1 +1,1 @@
-include ':app', ':henryfragmentation'
+include ':app', ':henryfragmentation', ':hcharts'

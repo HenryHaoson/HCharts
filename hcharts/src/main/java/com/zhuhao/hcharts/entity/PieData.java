@@ -1,4 +1,4 @@
-package cn.henry.zhuhao.animatordemo.entity;
+package com.zhuhao.hcharts.entity;
 
 import android.support.annotation.NonNull;
 

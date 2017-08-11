@@ -6,10 +6,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
+import com.zhuhao.hcharts.entity.PieData;
+import com.zhuhao.hcharts.views.PieView;
 
-import cn.henry.zhuhao.animatordemo.entity.PieData;
-import cn.henry.zhuhao.animatordemo.views.PieView;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     public RecyclerView recyclerView;

@@ -1,4 +1,4 @@
-package cn.henry.zhuhao.animatordemo.entity;
+package com.zhuhao.hcharts.entity;
 
 /**
  * Created by HenryZhuhao on 2017/6/11.
@@ -11,6 +11,15 @@ public class BarData {
 
     // 非用户关心数据
     private int color = 0;      // 颜色
+    private int viewHeight=0;   //绘制时的高度
+
+    public int getViewHeight() {
+        return viewHeight;
+    }
+
+    public void setViewHeight(int viewHeight) {
+        this.viewHeight = viewHeight;
+    }
 
     public String getName() {
         return name;

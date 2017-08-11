@@ -1,4 +1,4 @@
-package cn.henry.zhuhao.animatordemo.views;
+package com.zhuhao.hcharts.views;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -19,11 +19,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
+import com.zhuhao.hcharts.entity.PieData;
+import com.zhuhao.hcharts.utils.ColorUtils;
+import com.zhuhao.hcharts.utils.GeomTool;
+
 import java.util.ArrayList;
 
-import cn.henry.zhuhao.animatordemo.entity.PieData;
-import cn.henry.zhuhao.animatordemo.utils.ColorUtils;
-import cn.henry.zhuhao.animatordemo.utils.GeomTool;
 
 /**
  * Created by HenryZhuhao on 2017/6/1.
@@ -53,6 +54,7 @@ public class PieView extends View {
 
     private Region[] regions;
     private Path[] paths;
+
     //Pie图的半径
     private float r;
     //pie图内圆半径
@@ -112,7 +114,7 @@ public class PieView extends View {
         mPaint.setColor(Color.WHITE);
         canvas.drawOval(rectSmall, mPaint);
         if (currentFlag == -2) {
-
+            Log.e("pieView","未获取点击啊事件");
         } else {
             onClickAnimator(canvas, currentFlag);
         }
@@ -157,8 +159,6 @@ public class PieView extends View {
         for (int i = 0; i < mData.size(); i++) {
 
             PieData pie = mData.get(i);
-
-
             sumValue += pie.getValue();       //计算数值和
             if (pie.getColor() == 0) {
                 int j = i % mColors.length;       //设置颜色
@@ -177,7 +177,7 @@ public class PieView extends View {
             pie.setStartangle(currentAngle);
             angles1[i] = pie.getAngle();//获取角度
             currentAngle += angle;
-            Log.e("pieview", mData.get(i).getStartangle() + "start");
+            Log.e("pieView", mData.get(i).getStartangle() + "start");
         }
     }
 
@@ -268,7 +268,7 @@ public class PieView extends View {
 
         int x = (int) pts[0];
         int y = (int) pts[1];
-        Log.e("pieview", "onTouch x:" + x + "y:" + y);
+        Log.e("pieView", "onTouch x:" + x + "y:" + y);
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
@@ -289,6 +289,13 @@ public class PieView extends View {
         return true;
     }
 
+
+    /**
+     * 绘制文本
+     * @param canvas 画布
+     * @param position 下标
+     * 设置文本位置，使用staticlayout换行
+     */
     private void drawText(Canvas canvas, int position) {
         PieData pie = mData.get(position);
         float value=pie.getPercentage();
@@ -339,7 +346,9 @@ public class PieView extends View {
         mListener = listener;
     }
 
-
+    /**
+     * 点击事件监听接口
+     */
     public interface PieListener {
         void onPieClicked(int position);
     }
