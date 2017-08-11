@@ -16,4 +16,8 @@ public class ColorUtils {
         newColor = Color.argb(alpha, r, g, b);
         return newColor;
     }
+
+    public static int getColorWithDeeper(int color,float ratio){
+        return  0;
+    }
 }
