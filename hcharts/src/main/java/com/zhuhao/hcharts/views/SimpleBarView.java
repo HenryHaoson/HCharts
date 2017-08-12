@@ -11,6 +11,7 @@ import android.graphics.PathEffect;
 import android.graphics.RectF;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import com.zhuhao.hcharts.entity.BarData;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 
 /**
  * Created by HenryZhuhao on 2017/6/11.
- * 进度:画笔设置
+ * 进度:valueline绘制，点击事件，动画
  */
 
 public class SimpleBarView extends View {
@@ -57,21 +58,21 @@ public class SimpleBarView extends View {
 
 
     //value-->height转换比例，使用的时候是height=value*scale;
-    private float scale;
-    private float totalValue;
+    private float scale = 0;
+    private float totalValue = 0;
     //数值最大高度
-    private int totalHeight;
+    private int totalHeight = 0;
 
     //valueLine 之间的距离。
-    private int intervalValueHeight;
+    private int intervalValueHeight = 0;
 
     //bar的宽度
     private int barWidth;
     //bar之间的间隔
-    private int intervalWidth;
+    private int intervalWidth = 0;
 
     //xLine的长度
-    private float valueLineLength;
+    private float valueLineLength = 0;
 
     //valueLine的个数
     private int valueLineCount = 3;
@@ -98,15 +99,16 @@ public class SimpleBarView extends View {
 
     public SimpleBarView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        initPaint();
     }
 
-    public void setBarWidth(int width) {
-        barWidth = width;
-    }
-
-    public void setIntervalWidth(int width) {
-        intervalWidth = width;
-    }
+//    public void setBarWidth(int width) {
+//        barWidth = width;
+//    }
+//
+//    public void setIntervalWidth(int width) {
+//        intervalWidth = width;
+//    }
 
 
     public void setData(ArrayList<BarData> list) {
@@ -124,22 +126,34 @@ public class SimpleBarView extends View {
         valueLinePaths = new Path[mData.size()];
         barsRects = new RectF[mData.size()];
         for (int i = 0; i < mData.size(); i++) {
+
             BarData bar = mData.get(i);
-            int j = i % mColors.length;
-            bar.setColor(mColors[j]);
+            if (bar.getColor() == 0) {
+                int j = i % mColors.length;
+                bar.setColor(mColors[j]);
+            }
         }
+        //initCommons();
     }
 
     private void initPaint() {
+
+        //设置文字画笔
         textPaint = new TextPaint();
         textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(30);
+        textPaint.setAntiAlias(true);
+        //Typeface font = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+        //textPaint.setTypeface(font);
         textPaint.setTextAlign(Paint.Align.LEFT);
 
-        linePaint=new Paint();
-        PathEffect effects = new DashPathEffect(new float[]{}, 1);
+        //设置虚线画笔
+        linePaint = new Paint();
+        PathEffect effects = new DashPathEffect(new float[]{5, 5, 5, 5}, 1);
         linePaint.setPathEffect(effects);
 
-        rectPaint=new Paint();
+        //设置矩形画笔
+        rectPaint = new Paint();
         rectPaint.setStyle(Paint.Style.FILL);
 
 
@@ -151,6 +165,7 @@ public class SimpleBarView extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         mHeight = h;
         mWidth = w;
+        initCommons();
     }
 
     public void initCommons() {
@@ -164,8 +179,29 @@ public class SimpleBarView extends View {
         valueLineLength = mWidth - barWidth;
 
         //bar可绘制最大高度
-        totalHeight = mHeight / 10 * 8;
+        totalHeight = mHeight / 10 * 9;
 
+
+        intervalValueHeight=totalHeight/valueLineCount;
+
+
+
+        scale = totalHeight / totalValue;
+
+        Log.d("simpleBarView","barWidth"+barWidth);
+        Log.d("simpleBarView","intervalWidth"+intervalWidth);
+        Log.d("simpleBarView","totalHeight"+totalHeight);
+        scale=totalHeight/totalValue;
+        initBarHeights();
+        initBars();
+        initPaths();
+
+    }
+
+    public void initBarHeights(){
+        for (int i = 0; i <mData.size() ; i++) {
+            mData.get(i).setViewHeight((int)(mData.get(i).getValue()*scale));
+        }
     }
 
     @Override
@@ -181,44 +217,61 @@ public class SimpleBarView extends View {
         //      |
         //      ⌄
         canvas.translate(0, mHeight);
-        canvas.getMatrix().invert(mMapMatrix);
+//        canvas.getMatrix().invert(mMapMatrix);
+        drawValueLines(canvas);
+        drawNames(canvas);
+        drawBars(canvas);
+        drawValues(canvas);
+    }
+
+    public void initPaths() {
+
+        for (int i = 0; i < valueLineCount; i++) {
+            valueLinePaths[i] = new Path();
+            valueLinePaths[i].moveTo(barWidth, -intervalValueHeight * (i + 1));
+            valueLinePaths[i].lineTo(mWidth, -intervalValueHeight * (i + 1));
+        }
     }
 
     public void drawValueLines(Canvas canvas) {
         for (int i = 0; i < valueLineCount; i++) {
-            Path path = valueLinePaths[i];
-            path.moveTo(barWidth, -intervalValueHeight * (i + 1));
-            path.lineTo(mWidth, -intervalValueHeight * (i + 1));
-            canvas.drawPath(path, textPaint);
+            canvas.drawPath(valueLinePaths[i], linePaint);
         }
 
     }
 
     public void drawNames(Canvas canvas) {
         for (int i = 0; i < mData.size(); i++) {
-            canvas.drawText(mData.get(i).getName(), barWidth, 0, textPaint);
+            canvas.drawText(mData.get(i).getName(),barWidth + i * (barWidth + intervalWidth), -20, textPaint);
         }
     }
 
     public void drawValues(Canvas canvas) {
         for (int i = 0; i < mData.size(); i++) {
             if (i == 0) {
-                canvas.drawText(0+"",0,0,textPaint);
-            }else {
-                canvas.drawText((totalValue/3*i)+"",0,-intervalValueHeight*i,textPaint);
+                canvas.drawText(0 + "", 10, -mHeight/10, textPaint);
+            } else {
+                canvas.drawText(((Math.round((totalValue / 3 * i)*1000))/1000) + "", 10, -intervalValueHeight * i, textPaint);
             }
         }
     }
 
-    public void drawBars(Canvas canvas) {
-        for (int i = 0; i <mData.size() ; i++) {
-            RectF rect=barsRects[i];
-            rect.left=barWidth+i*(barWidth+intervalValueHeight);
-            rect.right=rect.left+barWidth;
-            rect.top=-mData.get(i).getViewHeight();
-            rect.top=-mWidth/10;
+    public void initBars() {
+        for (int i = 0; i < mData.size(); i++) {
+            barsRects[i] = new RectF();
+            barsRects[i].left = barWidth + i * (barWidth + intervalWidth);
+            barsRects[i].right = barsRects[i].left + barWidth;
+            barsRects[i].top = -mData.get(i).getViewHeight();
+            barsRects[i].bottom=-mHeight/10;
+            Log.d("simpleBarView","getviewHeight"+mData.get(i).getViewHeight()+"");
+        }
+    }
 
-            canvas.drawRect(rect,rectPaint);
+    public void drawBars(Canvas canvas) {
+
+        for (int i = 0; i < mData.size(); i++) {
+            rectPaint.setColor(mData.get(i).getColor());
+            canvas.drawRect(barsRects[i], rectPaint);
         }
     }
 
@@ -239,8 +292,6 @@ public class SimpleBarView extends View {
     public void setTotalValue(float value) {
         totalValue = value;
 
-        //在这里设置比例，就不暴露给外部了。
-        scale = totalHeight / totalValue;
     }
 
 
@@ -264,6 +315,11 @@ public class SimpleBarView extends View {
 
         public Builder setTotalValue(float value) {
             mView.setTotalValue(value);
+            return this;
+        }
+
+        public Builder setValueLineCount(int count) {
+            mView.setValueLineCount(count);
             return this;
         }
 

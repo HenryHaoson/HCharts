@@ -6,8 +6,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.widget.Toast;
 
+import com.zhuhao.hcharts.entity.BarData;
 import com.zhuhao.hcharts.entity.PieData;
 import com.zhuhao.hcharts.views.PieView;
+import com.zhuhao.hcharts.views.SimpleBarView;
 
 import java.util.ArrayList;
 
@@ -39,5 +41,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         view.startAnimator();
+
+
+        SimpleBarView view1= (SimpleBarView) this.findViewById(R.id.simple_bar_view);
+        ArrayList<BarData> datas1=new ArrayList<>();
+        BarData barData1 = new BarData("喜羊羊", 60, Color.MAGENTA);
+        BarData barData2 = new BarData("懒羊羊", 30,Color.GREEN);
+        BarData barData3 = new BarData("美羊羊", 40,Color.CYAN);
+        BarData barData4 = new BarData("灰太狼", 20,Color.DKGRAY);
+        BarData barData5 = new BarData("红太狼", 20,Color.YELLOW);
+        datas1.add(barData1);
+        datas1.add(barData2);
+        datas1.add(barData3);
+        datas1.add(barData4);
+        datas1.add(barData5);
+        SimpleBarView.build(view1).setValueLineCount(3).setData(datas1).setTotalValue(70).start();
+
+
+
     }
 }

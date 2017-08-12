@@ -13,6 +13,15 @@ public class BarData {
     private int color = 0;      // 颜色
     private int viewHeight=0;   //绘制时的高度
 
+    public BarData(String name,float value){
+        this(name,value,0);
+    }
+    public BarData(String name,float value,int color){
+        this.name=name;
+        this.value=value;
+        this.color=color;
+    }
+
     public int getViewHeight() {
         return viewHeight;
     }
