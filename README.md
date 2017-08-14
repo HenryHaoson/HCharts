@@ -2,7 +2,7 @@
 这是一个基于android的平台的图表框架，支持点击，动画。
 
 <p><img src="https://github.com/HenryHaoson/HCharts/blob/master/Gifs/PieView.gif" alt="image" width="50%" height="50%"/></p>
-<p><img src="https://github.com/HenryHaoson/HCharts/blob/master/Gifs/simpleBarView.gif" alt="image" width="50%" height="50%"/></p>
+<p><img src="https://github.com/HenryHaoson/HCharts/blob/master/Gifs/SimpleBarView.gif" alt="image" width="50%" height="50%"/></p>
 
 
 ## Installation
