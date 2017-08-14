@@ -32,15 +32,17 @@ public class MainActivity extends AppCompatActivity {
         datas.add(pieData3);
         datas.add(pieData4);
         datas.add(pieData5);
-        view.setStartAngle(90);
-        view.setData(datas);
-        view.setListener(new PieView.PieListener() {
-            @Override
-            public void onPieClicked(int position) {
-                Toast.makeText(getApplicationContext(), position + "pie", Toast.LENGTH_SHORT).show();
-            }
-        });
-        view.startAnimator();
+//        view.setStartAngle(90);
+//        view.setData(datas);
+//        view.setListener(new PieView.PieListener() {
+//            @Override
+//            public void onPieClicked(int position) {
+//                Toast.makeText(getApplicationContext(), position + "pie", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//        view.startAnimator();
+
+        PieView.build(view).setStartAngle(90).setData(datas);
 
 
         SimpleBarView view1 = (SimpleBarView) this.findViewById(R.id.simple_bar_view);

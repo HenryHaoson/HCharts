@@ -95,6 +95,7 @@ public class PieView extends View {
         for (int i = 0; i < mData.size(); i++) {
             initRegion(i);
         }
+        startAnimator();
     }
 
     @Override
@@ -353,4 +354,29 @@ public class PieView extends View {
         void onPieClicked(int position);
     }
 
+
+    //*************
+    public static Builder build(PieView view) {
+        return new Builder(view);
+    }
+
+
+    public static class Builder {
+        private PieView mView;
+
+        private Builder(PieView view) {
+            this.mView = view;
+        }
+
+        public Builder setStartAngle(int value) {
+            mView.setStartAngle(value);
+            return this;
+        }
+
+        public Builder setData(ArrayList<PieData> list) {
+            mView.setData(list);
+            return this;
+        }
+
+    }
 }

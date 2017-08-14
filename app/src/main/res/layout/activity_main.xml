@@ -15,14 +15,16 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-  <com.zhuhao.hcharts.views.PieView
-      android:id="@+id/pieview"
-      android:layout_width="match_parent"
-      android:layout_height="400dp" />
-]<com.zhuhao.hcharts.views.SimpleBarView
-        android:id="@+id/simple_bar_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp" />
+        <com.zhuhao.hcharts.views.PieView
+            android:id="@+id/pieview"
+            android:layout_width="match_parent"
+            android:layout_height="400dp" />
+        ]
+
+        <com.zhuhao.hcharts.views.SimpleBarView
+            android:id="@+id/simple_bar_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp" />
 
     </LinearLayout>
 
