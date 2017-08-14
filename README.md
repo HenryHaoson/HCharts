@@ -1,8 +1,8 @@
 # HCharts
 这是一个基于android的平台的图表框架，支持点击，动画。
 
-<p><img src="file:///Users/zhuhao/AndroidStudioProjects/AnimatorDemo/Gifs/pieView.gif?1" alt="image" width="50%" height="50%"/></p>
-<p><img src="file:///Users/zhuhao/AndroidStudioProjects/AnimatorDemo/Gifs/simpleBarView.gif?1" alt="image" width="50%" height="50%"/></p>
+<p><img src="Gifs/pieView.gif?1" alt="image" width="50%" height="50%"/></p>
+<p><img src="Gifs/simpleBarView.gif?1" alt="image" width="50%" height="50%"/></p>
 
 
 ## Installation
