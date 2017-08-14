@@ -1,5 +1,6 @@
 package com.zhuhao.hcharts.views;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,7 +13,9 @@ import android.graphics.RectF;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 
 import com.zhuhao.hcharts.entity.BarData;
 
@@ -79,10 +82,13 @@ public class SimpleBarView extends View {
 
     //动画支持数据。
     private float[] length;
-    private float[] length1;
+
+    private float[] barValues;
 
     //坐标系转换
     private Matrix mMapMatrix;
+
+    private BarListener mListener;
 
     /**
      * 构造方法
@@ -100,6 +106,7 @@ public class SimpleBarView extends View {
     public SimpleBarView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initPaint();
+        mMapMatrix = new Matrix();
     }
 
 //    public void setBarWidth(int width) {
@@ -122,7 +129,8 @@ public class SimpleBarView extends View {
             return;
         }
         length = new float[mData.size()];
-        length1 = new float[mData.size()];
+        barValues = new float[mData.size()];
+
         valueLinePaths = new Path[mData.size()];
         barsRects = new RectF[mData.size()];
         for (int i = 0; i < mData.size(); i++) {
@@ -145,7 +153,7 @@ public class SimpleBarView extends View {
         textPaint.setAntiAlias(true);
         //Typeface font = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
         //textPaint.setTypeface(font);
-        textPaint.setTextAlign(Paint.Align.LEFT);
+        textPaint.setTextAlign(Paint.Align.CENTER);
 
         //设置虚线画笔
         linePaint = new Paint();
@@ -163,6 +171,7 @@ public class SimpleBarView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        mMapMatrix.reset();
         mHeight = h;
         mWidth = w;
         initCommons();
@@ -179,28 +188,28 @@ public class SimpleBarView extends View {
         valueLineLength = mWidth - barWidth;
 
         //bar可绘制最大高度
-        totalHeight = mHeight / 10 * 9;
+        totalHeight = mHeight / 10 * 8;
 
 
-        intervalValueHeight=totalHeight/valueLineCount;
-
+        intervalValueHeight = totalHeight / valueLineCount;
 
 
         scale = totalHeight / totalValue;
 
-        Log.d("simpleBarView","barWidth"+barWidth);
-        Log.d("simpleBarView","intervalWidth"+intervalWidth);
-        Log.d("simpleBarView","totalHeight"+totalHeight);
-        scale=totalHeight/totalValue;
+        Log.d("simpleBarView", "barWidth" + barWidth);
+        Log.d("simpleBarView", "intervalWidth" + intervalWidth);
+        Log.d("simpleBarView", "totalHeight" + totalHeight);
+        scale = totalHeight / totalValue;
         initBarHeights();
-        initBars();
         initPaths();
+        //生命周期问题，在这里执行start方法。
+        startAnimator();
 
     }
 
-    public void initBarHeights(){
-        for (int i = 0; i <mData.size() ; i++) {
-            mData.get(i).setViewHeight((int)(mData.get(i).getValue()*scale));
+    public void initBarHeights() {
+        for (int i = 0; i < mData.size(); i++) {
+            mData.get(i).setViewHeight((int) (mData.get(i).getValue() * scale));
         }
     }
 
@@ -217,11 +226,11 @@ public class SimpleBarView extends View {
         //      |
         //      ⌄
         canvas.translate(0, mHeight);
-//        canvas.getMatrix().invert(mMapMatrix);
-        drawValueLines(canvas);
+        canvas.getMatrix().invert(mMapMatrix);
         drawNames(canvas);
         drawBars(canvas);
         drawValues(canvas);
+        drawBarValues(canvas);
     }
 
     public void initPaths() {
@@ -233,25 +242,19 @@ public class SimpleBarView extends View {
         }
     }
 
-    public void drawValueLines(Canvas canvas) {
-        for (int i = 0; i < valueLineCount; i++) {
-            canvas.drawPath(valueLinePaths[i], linePaint);
-        }
-
-    }
 
     public void drawNames(Canvas canvas) {
         for (int i = 0; i < mData.size(); i++) {
-            canvas.drawText(mData.get(i).getName(),barWidth + i * (barWidth + intervalWidth), -20, textPaint);
+            canvas.drawText(mData.get(i).getName(), barWidth + i * (barWidth + intervalWidth) + barWidth / 2, -20, textPaint);
         }
     }
 
     public void drawValues(Canvas canvas) {
         for (int i = 0; i < mData.size(); i++) {
             if (i == 0) {
-                canvas.drawText(0 + "", 10, -mHeight/10, textPaint);
+                canvas.drawText(0 + "", barWidth / 3, -mHeight / 10, textPaint);
             } else {
-                canvas.drawText(((Math.round((totalValue / 3 * i)*1000))/1000) + "", 10, -intervalValueHeight * i, textPaint);
+                canvas.drawText(((Math.round((totalValue / 3 * i) * 1000)) / 1000) + "", barWidth / 3, -(intervalValueHeight * i + mHeight / 10), textPaint);
             }
         }
     }
@@ -261,17 +264,27 @@ public class SimpleBarView extends View {
             barsRects[i] = new RectF();
             barsRects[i].left = barWidth + i * (barWidth + intervalWidth);
             barsRects[i].right = barsRects[i].left + barWidth;
-            barsRects[i].top = -mData.get(i).getViewHeight();
-            barsRects[i].bottom=-mHeight/10;
-            Log.d("simpleBarView","getviewHeight"+mData.get(i).getViewHeight()+"");
+//            barsRects[i].top = -mData.get(i).getViewHeight();
+
+            barsRects[i].bottom = -mHeight / 10;
+            barsRects[i].top = -length[i] + barsRects[i].bottom;
+            Log.d("simpleBarView", "getviewHeight" + mData.get(i).getViewHeight() + "");
         }
     }
 
     public void drawBars(Canvas canvas) {
-
+        initBars();
         for (int i = 0; i < mData.size(); i++) {
             rectPaint.setColor(mData.get(i).getColor());
             canvas.drawRect(barsRects[i], rectPaint);
+        }
+    }
+
+    public void drawBarValues(Canvas canvas) {
+        for (int i = 0; i < mData.size(); i++) {
+            canvas.drawText((Math.round((barValues[i] * 1000) / 1000) + ""),
+                    barWidth + i * (barWidth + intervalWidth) + barWidth / 2, barsRects[i].top - 30, textPaint);
+
         }
     }
 
@@ -282,6 +295,7 @@ public class SimpleBarView extends View {
      */
     public void setValueLineCount(int count) {
         valueLineCount = count;
+        invalidate();
     }
 
     /**
@@ -291,14 +305,86 @@ public class SimpleBarView extends View {
      */
     public void setTotalValue(float value) {
         totalValue = value;
+        invalidate();
 
     }
 
 
     public void startAnimator() {
+        for (int i = 0; i < mData.size(); i++) {
+            ValueAnimator valueAnimatorA = ValueAnimator.ofFloat(0f, 1);
+            valueAnimatorA.setInterpolator(new LinearInterpolator());
+            valueAnimatorA.setDuration(1000);
+            final int finalI = i;
+            valueAnimatorA.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    length[finalI] = (float) animation.getAnimatedValue() * mData.get(finalI).getViewHeight();
+                    barValues[finalI] = (float) animation.getAnimatedValue() * mData.get(finalI).getValue();
+                    Log.e("tag", length[finalI] + "");
+                    invalidate();
+                }
+            });
 
+            valueAnimatorA.start();
+        }
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+
+        float[] pts = new float[2];
+//        pts[0] = event.getRawX();
+//        pts[1] = event.getRawY();
+        pts[0] = event.getX();
+        pts[1] = event.getY();
+        mMapMatrix.mapPoints(pts);
+
+
+        int x = (int) pts[0];
+        int y = (int) pts[1];
+        Log.e("simplebarView", "onTouch x:" + x + "y:" + y);
+
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                int position = getClickedBar(x, y);
+                mListener.onBarClicked(position);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                break;
+            case MotionEvent.ACTION_UP:
+
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                break;
+        }
+
+        invalidate();
+        return true;
+    }
+
+    public int getClickedBar(int x, int y) {
+        for (int i = 0; i < mData.size(); i++) {
+            if (barsRects[i].contains(x, y)) {
+                return i;
+            }
+
+
+        }
+        return -1;
+    }
+
+    public void setListener(BarListener listener) {
+        mListener = listener;
+    }
+
+
+    /**
+     * 点击事件监听接口
+     */
+    public interface BarListener {
+        void onBarClicked(int position);
+    }
 
     //*************
     public static Builder build(SimpleBarView view) {
@@ -328,8 +414,5 @@ public class SimpleBarView extends View {
             return this;
         }
 
-        public void start() {
-            mView.startAnimator();
-        }
     }
 }
