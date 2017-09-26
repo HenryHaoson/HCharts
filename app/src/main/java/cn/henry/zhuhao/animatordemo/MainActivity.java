@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 //        view.setStartAngle(90);
 //        view.setData(datas);
 //        view.setListener(new PieView.PieListener() {
-//            @Override
+//            @Ovride
 //            public void onPieClicked(int position) {
 //                Toast.makeText(getApplicationContext(), position + "pie", Toast.LENGTH_SHORT).show();
 //            }

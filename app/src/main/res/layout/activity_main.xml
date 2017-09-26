@@ -19,7 +19,6 @@
             android:id="@+id/pieview"
             android:layout_width="match_parent"
             android:layout_height="400dp" />
-        ]
 
         <com.zhuhao.hcharts.views.SimpleBarView
             android:id="@+id/simple_bar_view"

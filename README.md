@@ -33,7 +33,7 @@ TODO: Describe the installation process
            });
 ```
 
--SimpleBarChart
+- SimpleBarChart
 >xml
 
 ```

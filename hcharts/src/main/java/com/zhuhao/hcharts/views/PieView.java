@@ -292,7 +292,7 @@ public class PieView extends View {
 
 
     /**
-     * 绘制文本
+     * 绘
      * @param canvas 画布
      * @param position 下标
      * 设置文本位置，使用staticlayout换行
