@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class BrokenLineChart implements BaseView {
     @Override
     public void initCommons() {
-        
+
     }
 
     @Override

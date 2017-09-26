@@ -38,8 +38,7 @@ public class SimpleBarView extends View {
     //      ⌄
     private int[] mColors = {0xFFCCFF00, 0xFF6495ED, 0xFFE32636, 0xFF800000, 0xFF808000, 0xFFFF8C69, 0xFF808080,
             0xFFE6B800, 0xFF7CFC00};
-    // 饼状图初始绘制角度
-    private float mStartAngle = 0;
+
     // 数据
     private ArrayList<BarData> mData;
     // 宽高
